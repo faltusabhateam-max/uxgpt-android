@@ -100,6 +100,28 @@ public class UxgptBgPlugin extends Plugin {
         } catch (Exception e) { call.reject("Couldn't save: " + e.getMessage()); }
     }
 
+    /** Open a saved chart image / video in the gallery or player (used when a "download complete" notification is tapped). */
+    @PluginMethod
+    public void openMedia(PluginCall call) {
+        String uri = call.getString("uri"); String path = call.getString("path"); String mime = call.getString("mime", "image/png");
+        if (mime == null || !(mime.startsWith("image/") || mime.startsWith("video/"))) mime = "image/*";
+        try {
+            android.net.Uri u = null;
+            if (uri != null && uri.startsWith("content://")) u = android.net.Uri.parse(uri);
+            else if (path != null && !path.isEmpty()) {
+                java.io.File f = new java.io.File(path);
+                if (!f.getCanonicalPath().startsWith(getContext().getCacheDir().getCanonicalPath()) || !f.exists()) { call.reject("file not found"); return; }
+                u = androidx.core.content.FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f);
+            }
+            if (u == null) { call.reject("nothing to open"); return; }
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            i.setDataAndType(u, mime);
+            i.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            try { getActivity().startActivity(i); } catch (android.content.ActivityNotFoundException nf) { getActivity().startActivity(android.content.Intent.createChooser(i, mime.startsWith("video/") ? "Play video" : "Open image").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)); }
+            call.resolve();
+        } catch (Exception e) { call.reject("Couldn't open: " + e.getMessage()); }
+    }
+
     @PluginMethod
     public void runNow(PluginCall call) { PollWorker.runOnce(getContext()); call.resolve(); }
 }
