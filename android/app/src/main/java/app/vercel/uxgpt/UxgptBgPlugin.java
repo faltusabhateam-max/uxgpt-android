@@ -43,6 +43,9 @@ public class UxgptBgPlugin extends Plugin {
             CustomTabsIntent ct = new CustomTabsIntent.Builder()
                 .setDefaultColorSchemeParams(new CustomTabColorSchemeParams.Builder().setToolbarColor(0xFF050505).build())
                 .setShowTitle(true).build();
+            // Always open in a real browser tab (never let the X / Google apps intercept the OAuth page).
+            String pkg = androidx.browser.customtabs.CustomTabsClient.getPackageName(getContext(), null);
+            if (pkg != null) ct.intent.setPackage(pkg);
             ct.launchUrl(getActivity(), url);
             return true;
         } catch (Exception e) { return null; }
@@ -54,6 +57,47 @@ public class UxgptBgPlugin extends Plugin {
         if (u == null || !u.startsWith("https://")) { call.reject("invalid url"); return; }
         new CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(getActivity(), Uri.parse(u));
         call.resolve();
+    }
+
+    /** Save a generated chart image / video to the phone gallery (Pictures/UXGPT or Movies/UXGPT).
+     *  The file arrives in base64 chunks (append) so large videos never cross the bridge in one piece. */
+    @PluginMethod
+    public void mediaChunk(PluginCall call) {
+        String id = call.getString("id", ""); String data = call.getString("data", "");
+        if (id == null || !id.matches("[A-Za-z0-9_-]{4,40}")) { call.reject("invalid id"); return; }
+        java.io.File tmp = new java.io.File(getContext().getCacheDir(), "media_" + id);
+        try {
+            if (data != null && !data.isEmpty()) {
+                byte[] bytes = android.util.Base64.decode(data, android.util.Base64.DEFAULT);
+                try (java.io.FileOutputStream o = new java.io.FileOutputStream(tmp, Boolean.TRUE.equals(call.getBoolean("append", true)))) { o.write(bytes); }
+            }
+            if (!Boolean.TRUE.equals(call.getBoolean("done", false))) { call.resolve(); return; }
+            String mime = call.getString("mime", "image/png"); String name = call.getString("name", "UXGPT-" + System.currentTimeMillis());
+            if (mime == null || !(mime.equals("image/png") || mime.equals("video/mp4") || mime.equals("video/webm"))) { call.reject("unsupported type"); return; }
+            name = name.replaceAll("[^A-Za-z0-9._-]", "_");
+            boolean video = mime.startsWith("video/");
+            android.net.Uri out;
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                android.content.ContentValues cv = new android.content.ContentValues();
+                cv.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name);
+                cv.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime);
+                cv.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, (video ? android.os.Environment.DIRECTORY_MOVIES : android.os.Environment.DIRECTORY_PICTURES) + "/UXGPT");
+                cv.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1);
+                android.net.Uri col = video ? android.provider.MediaStore.Video.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY) : android.provider.MediaStore.Images.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY);
+                android.content.ContentResolver cr = getContext().getContentResolver();
+                out = cr.insert(col, cv);
+                if (out == null) throw new Exception("MediaStore insert failed");
+                try (java.io.OutputStream os = cr.openOutputStream(out); java.io.FileInputStream in = new java.io.FileInputStream(tmp)) { byte[] b = new byte[65536]; int n; while ((n = in.read(b)) > 0) os.write(b, 0, n); }
+                cv.clear(); cv.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0); cr.update(out, cv, null, null);
+            } else {
+                java.io.File dir = new java.io.File(getContext().getExternalFilesDir(video ? android.os.Environment.DIRECTORY_MOVIES : android.os.Environment.DIRECTORY_PICTURES), "UXGPT");
+                dir.mkdirs(); java.io.File f = new java.io.File(dir, name);
+                try (java.io.FileOutputStream os = new java.io.FileOutputStream(f); java.io.FileInputStream in = new java.io.FileInputStream(tmp)) { byte[] b = new byte[65536]; int n; while ((n = in.read(b)) > 0) os.write(b, 0, n); }
+                android.media.MediaScannerConnection.scanFile(getContext(), new String[]{ f.getAbsolutePath() }, new String[]{ mime }, null);
+                out = android.net.Uri.fromFile(f);
+            }
+            JSObject r = new JSObject(); r.put("uri", out.toString()); r.put("path", tmp.getAbsolutePath()); call.resolve(r);
+        } catch (Exception e) { call.reject("Couldn't save: " + e.getMessage()); }
     }
 
     @PluginMethod

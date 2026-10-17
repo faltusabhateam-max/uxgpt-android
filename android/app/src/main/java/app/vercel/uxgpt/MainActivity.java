@@ -5,6 +5,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.webkit.CookieManager;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -22,6 +26,7 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         // Smoothness: force GPU compositing for the WebView layer.
         try { getBridge().getWebView().setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null); } catch (Exception ignored) {}
+        fitKeyboard();
         clearCacheOnUpdate();
         PollWorker.schedule(this, false);
         openFromNotification(getIntent());
@@ -31,6 +36,28 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         openFromNotification(intent);
+    }
+
+    /** Keyboard: draw edge-to-edge on every Android version and size the WebView to the space above the soft keyboard
+     *  (and above the system bars / cutouts). The web layout (h-dvh) then shrinks, so the composer and every sheet input
+     *  sit directly on top of the keyboard. Replaces Capacitor's system-bar-only margin listener. */
+    private void fitKeyboard() {
+        try {
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+            final android.view.View wv = getBridge().getWebView();
+            ViewCompat.setOnApplyWindowInsetsListener(wv, (v, wi) -> {
+                Insets bars = wi.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets ime = wi.getInsets(WindowInsetsCompat.Type.ime());
+                android.view.ViewGroup.MarginLayoutParams mlp = (android.view.ViewGroup.MarginLayoutParams) v.getLayoutParams();
+                int bottom = Math.max(bars.bottom, ime.bottom);
+                if (mlp.leftMargin != bars.left || mlp.topMargin != bars.top || mlp.rightMargin != bars.right || mlp.bottomMargin != bottom) {
+                    mlp.leftMargin = bars.left; mlp.topMargin = bars.top; mlp.rightMargin = bars.right; mlp.bottomMargin = bottom;
+                    v.setLayoutParams(mlp);
+                }
+                return WindowInsetsCompat.CONSUMED;
+            });
+            ViewCompat.requestApplyInsets(wv);
+        } catch (Exception ignored) {}
     }
 
     /** A new app build must never run a stale cached web build: wipe the WebView HTTP cache when versionCode changes
