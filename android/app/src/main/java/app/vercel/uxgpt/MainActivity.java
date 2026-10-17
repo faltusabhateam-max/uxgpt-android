@@ -20,6 +20,8 @@ public class MainActivity extends BridgeActivity {
             cm.flush();
         } catch (Exception ignored) {}
         super.onCreate(savedInstanceState);
+        // Smoothness: force GPU compositing for the WebView layer.
+        try { getBridge().getWebView().setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null); } catch (Exception ignored) {}
         clearCacheOnUpdate();
         PollWorker.schedule(this, false);
         openFromNotification(getIntent());
@@ -58,6 +60,9 @@ public class MainActivity extends BridgeActivity {
         if (data != null && "uxgpt".equals(data.getScheme()) && "share".equals(data.getHost())) {
             String code = data.getLastPathSegment();
             if (code != null && code.matches("[A-Za-z0-9_-]{1,64}")) link = "https://uxgpt.vercel.app/s/" + code;
+        } else if (data != null && "uxgpt".equals(data.getScheme()) && "chat".equals(data.getHost())) {
+            String id = data.getLastPathSegment();
+            if (id != null && id.matches("[A-Za-z0-9_-]{6,40}")) link = "https://uxgpt.vercel.app/c/" + id;
         } else if (data != null && "uxgpt".equals(data.getScheme()) && "invite".equals(data.getHost())) link = "https://uxgpt.vercel.app/invite";
         else if (data != null && "https".equals(data.getScheme()) && "uxgpt.vercel.app".equals(data.getHost())) link = data.toString();
         if (link != null) {
