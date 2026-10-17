@@ -27,12 +27,9 @@
   },
   "plugins": {
     "App": {},
-    "PushNotifications": {
-      "presentationOptions": [
-        "badge",
-        "sound",
-        "alert"
-      ]
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_uxgpt",
+      "iconColor": "#FFFFFF"
     }
   }
 }

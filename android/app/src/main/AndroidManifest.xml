@@ -25,10 +25,6 @@
 
         </activity>
 
-        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="uxgpt_default" />
-        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_uxgpt" />
-        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/ic_launcher_background" />
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
