@@ -26,6 +26,13 @@
     "allowMixedContent": false
   },
   "plugins": {
-    "App": {}
+    "App": {},
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    }
   }
 }
