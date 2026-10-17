@@ -1,6 +1,9 @@
 package app.vercel.uxgpt;
 
 import android.content.Context;
+import android.net.Uri;
+import androidx.browser.customtabs.CustomTabColorSchemeParams;
+import androidx.browser.customtabs.CustomTabsIntent;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -26,6 +29,30 @@ public class UxgptBgPlugin extends Plugin {
         Context c = getContext();
         c.getSharedPreferences(PollWorker.PREFS, Context.MODE_PRIVATE).edit().clear().apply();
         PollWorker.cancel(c);
+        call.resolve();
+    }
+
+    /** OAuth providers (Google, X, Apple) refuse embedded WebViews: open them in Chrome Custom Tabs instead.
+     *  The flow returns via https://uxgpt.vercel.app/oauth/return -> uxgpt://oauth -> MainActivity. */
+    @Override
+    public Boolean shouldOverrideLoad(Uri url) {
+        String h = url.getHost() == null ? "" : url.getHost();
+        boolean oauth = h.equals("accounts.google.com") || h.equals("x.com") || h.equals("twitter.com") || h.endsWith(".twitter.com") || h.endsWith(".x.com") || h.equals("appleid.apple.com");
+        if (!oauth) return null;
+        try {
+            CustomTabsIntent ct = new CustomTabsIntent.Builder()
+                .setDefaultColorSchemeParams(new CustomTabColorSchemeParams.Builder().setToolbarColor(0xFF050505).build())
+                .setShowTitle(true).build();
+            ct.launchUrl(getActivity(), url);
+            return true;
+        } catch (Exception e) { return null; }
+    }
+
+    @PluginMethod
+    public void openTab(PluginCall call) {
+        String u = call.getString("url");
+        if (u == null || !u.startsWith("https://")) { call.reject("invalid url"); return; }
+        new CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(getActivity(), Uri.parse(u));
         call.resolve();
     }
 

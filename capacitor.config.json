@@ -11,11 +11,6 @@
       "auth.privy.io",
       "*.privy.io",
       "privy.io",
-      "x.com",
-      "*.x.com",
-      "twitter.com",
-      "*.twitter.com",
-      "api.twitter.com",
       "verify.walletconnect.com",
       "verify.walletconnect.org"
     ]
