@@ -1,17 +1,31 @@
 {
-  "appId": "app.vercel.uxgpt",
+  "appId": "app.uxgpt.android",
   "appName": "UXGPT",
   "webDir": "www",
   "server": {
     "url": "https://uxgpt.vercel.app/chat",
     "androidScheme": "https",
     "errorPath": "index.html",
-    "allowNavigation": ["uxgpt.vercel.app", "auth.privy.io", "*.privy.io", "privy.io", "x.com", "*.x.com", "twitter.com", "*.twitter.com", "api.twitter.com", "verify.walletconnect.com", "verify.walletconnect.org"]
+    "allowNavigation": [
+      "uxgpt.vercel.app",
+      "auth.privy.io",
+      "*.privy.io",
+      "privy.io",
+      "x.com",
+      "*.x.com",
+      "twitter.com",
+      "*.twitter.com",
+      "api.twitter.com",
+      "verify.walletconnect.com",
+      "verify.walletconnect.org"
+    ]
   },
   "android": {
     "appendUserAgent": "UXGPTApp/1.0",
     "backgroundColor": "#050505",
     "allowMixedContent": false
   },
-  "plugins": { "App": {} }
+  "plugins": {
+    "App": {}
+  }
 }
