@@ -23,7 +23,8 @@
   "android": {
     "appendUserAgent": "UXGPTApp/1.0",
     "backgroundColor": "#050505",
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "adjustMarginsForEdgeToEdge": "force"
   },
   "plugins": {
     "App": {},
