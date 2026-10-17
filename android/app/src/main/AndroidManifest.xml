@@ -33,6 +33,22 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="uxgpt" android:host="oauth" />
             </intent-filter>
+            <!-- Shared links: uxgpt://share/<code>, uxgpt://invite -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="uxgpt" android:host="share" />
+                <data android:scheme="uxgpt" android:host="invite" />
+            </intent-filter>
+            <!-- Android App Links: https://uxgpt.vercel.app/s/* and /invite open directly in the app -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="uxgpt.vercel.app" android:pathPrefix="/s/" />
+                <data android:scheme="https" android:host="uxgpt.vercel.app" android:pathPrefix="/invite" />
+            </intent-filter>
 
         </activity>
 
@@ -54,6 +70,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- In-app updates: hand the verified APK to the system installer -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

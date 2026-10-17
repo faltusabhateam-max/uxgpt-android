@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(UxgptBgPlugin.class);
+        registerPlugin(UxgptUpdaterPlugin.class);
         // First-party marker cookie so every request from the app (RSC fetches, OAuth returns) passes the app gate.
         try {
             CookieManager cm = CookieManager.getInstance();
@@ -51,6 +52,18 @@ public class MainActivity extends BridgeActivity {
             i.setData(null);
             final String target = "https://uxgpt.vercel.app/chat" + (q != null ? "?" + q : "");
             if (getBridge() != null) getBridge().getWebView().post(() -> getBridge().getWebView().loadUrl(target));
+            return;
+        }
+        String link = null;
+        if (data != null && "uxgpt".equals(data.getScheme()) && "share".equals(data.getHost())) {
+            String code = data.getLastPathSegment();
+            if (code != null && code.matches("[A-Za-z0-9_-]{1,64}")) link = "https://uxgpt.vercel.app/s/" + code;
+        } else if (data != null && "uxgpt".equals(data.getScheme()) && "invite".equals(data.getHost())) link = "https://uxgpt.vercel.app/invite";
+        else if (data != null && "https".equals(data.getScheme()) && "uxgpt.vercel.app".equals(data.getHost())) link = data.toString();
+        if (link != null) {
+            i.setData(null);
+            final String target = link;
+            if (getBridge() != null) getBridge().getWebView().postDelayed(() -> getBridge().getWebView().loadUrl(target), 200);
             return;
         }
         String u = i == null ? null : i.getStringExtra("uxgpt_url");
